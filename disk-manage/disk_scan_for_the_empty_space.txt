@@ -1,0 +1,9 @@
+### We can use only new device/disk
+echo "- - -" > /sys/class/scsi_host/host0/scan
+echo "- - -" > /sys/class/scsi_host/host1/scan
+
+### For Resizing device/disk, we can specify label of disk. For example, sda
+echo 1 > /sys/class/block/sda/device/rescan
+
+### Also, we can use partprobe for hard scan all devices
+partprobe

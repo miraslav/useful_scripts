@@ -1,0 +1,1 @@
+rsync -alptgov -f"+ */" -f"- *" $source $dest

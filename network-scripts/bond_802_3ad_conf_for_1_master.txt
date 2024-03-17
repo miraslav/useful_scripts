@@ -1,0 +1,27 @@
+# /etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+NAME=bond0
+BONDING_OPTS="mode=4 miimon=100 xmit_hash_policy=layer3+4 lacp_rate=fast"
+ONBOOT=yes
+BOOTPROTO=none
+IPADDR=<IP_ADDRESS>
+NETMASK=<NETMASK>
+GATEWAY=<GATEWAY>
+DNS1=<DNS_SERVER>
+BONDING_MASTER=yes
+
+# /etc/sysconfig/network-scripts/ifcfg-ensX (replace X with the appropriate number)
+DEVICE=ensX
+NAME=ensX
+ONBOOT=yes
+BOOTPROTO=none
+SLAVE=yes
+MASTER=bond0
+
+# /etc/sysconfig/network-scripts/ifcfg-ensY (replace Y with the appropriate number)
+DEVICE=ensY
+NAME=ensY
+ONBOOT=yes
+BOOTPROTO=none
+SLAVE=yes
+MASTER=bond0

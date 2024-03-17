@@ -1,0 +1,5 @@
+- name: Deploy Nexus and Nginx
+  hosts: nexus-server
+  become: yes
+  roles:
+    - deploy_nexus_and_nginx

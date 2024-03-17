@@ -1,0 +1,60 @@
+# We have php, nginx and mariadb installed on node02 and have a DB mydb created there.
+# The user to connect to DB is myuser and password is mypassword.
+
+# Create a playbook ~/playbooks/database.yml to perform below given tasks:
+# a. Start nginx and mariadb services.
+
+# b. Delete all default files/directories from nginx document root /usr/share/nginx/html/
+
+# c. Download a zip archive from https://github.com/indercodes/ansible-1100-mock-nginx/raw/master/index.php.zip and extract it in /usr/share/nginx/html/
+
+# d. The archive have an index.php file to check DB connectivity. Replace some required DB details in the file using replace or lineinfile module:
+
+# $database = "database"; to $database = "mydb";
+
+# $username = "user"; to $username = "myuser";
+
+# $password = "password"; to $password = "mypassword";
+
+# e. Restart nginx after making required changes.
+
+
+###Create database.yml playbook and add below given code
+---
+- name: Create DB and Web Server
+  hosts: node02
+  tasks:
+    - name: Start Nginx and MariaDB Services
+      service:
+        name: "{{ item }}"
+        state: started
+      with_items:
+        - nginx
+        - mariadb
+
+    - name: Delete all files from nginx default directories
+      shell: 
+        cmd: 'rm -rf /usr/share/nginx/html/*'
+        warn: no
+
+    - name: Download archive files
+      unarchive:
+        src: https://github.com/indercodes/ansible-1100-mock-nginx/raw/master/index.php.zip
+        dest: /usr/share/nginx/html/
+        remote_src: yes
+
+    - name: Replace some DB details via lineinfile
+      replace:
+        path: /usr/share/nginx/html/index.php
+        regexp: '{{ item.old }}'
+        replace: '{{ item.new }}'
+      with_items:
+        - { old: '\$database.*', new: '$database = "mydb";' }
+        - { old: '\$username.*', new: '$username = "myuser";' }
+        - { old: '\$password.*', new: '$password = "mypassword";' }
+
+    - name: Restart Nginx Service
+      service:
+        name: nginx
+        state: restarted
+        enabled: yes

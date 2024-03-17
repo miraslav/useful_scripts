@@ -1,0 +1,15 @@
+/var/log/httpd/*log {
+    daily
+    size 2G
+    missingok
+    rotate 5
+    delaycompress
+    notifempty
+    sharedscripts
+    copytruncate
+    compress
+    create 0644 root root
+    postrotate
+        /bin/systemctl reload httpd.service > /dev/null 2>/dev/null || true
+    endscript
+}

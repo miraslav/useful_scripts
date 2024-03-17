@@ -1,0 +1,71 @@
+###Create a playbook ~/playbooks/add_users.yml
+
+# Add an entry for node00 in ~/playbooks/inventory file.
+# IP address of node00 host is 172.20.1.100 and SSH user and password is root and Passw0rd.
+# We have a list of users in ~/playbooks/data/users.yml file.
+# There are two groups in there admins and developers which have list of different users.
+# Create a playbook ~/playbooks/add_users.yml to perform below given tasks on node00 node:
+# a. Add all users given in users.yml on node00.
+
+# b. Make sure home directory for all users under developers group is /var/www and for admins it should be default.
+
+# c. Set password d3v3l0p3r for all users under developers group and adm$n$ for users under admins group. Make sure to use Ansible vault to encrypt the passwords, use ~/playbooks/secrets/vault.txt file as vault secret file.
+
+# d. All users under admins group must be added as sudo user, for that simply make them member of wheel group on node00
+
+
+---
+- hosts: node00
+  gather_facts: no
+  vars:
+        admin_pass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          32393162666563346237633030306336343366336238363865646466323363643066656636323731
+          3362383863323164616461363933616239643432343361320a343166326635383437326665626663
+          32616230373832323833323036363939343433653633323435353336663030663435363862373062
+          3134643239346135330a653636613865336632373536663032363631633565663833316131343161
+          6465
+        developer_pass: !vault |
+          $ANSIBLE_VAULT;1.1;AES256
+          61393435363032663262623934616434313430353731656230376166326531613366333536646462
+          3937323439333135663364663964376332653365666563310a343731363963313466616265383265
+          62626232363233356462376562613335646236343034363338363037666363643836383132373662
+          6338396333613932620a343331343962626363323365616365356562366165326636303137643531
+          3833
+  tasks:
+    - name: Include user.yml
+      include_vars:
+        file: data/users.yml
+    - name: Creating admins
+      user:
+        name: "{{ item }}"
+        password: "{{ admin_pass | string | password_hash('sha512') }}"
+        groups: wheel
+      with_items: "{{ admins | list }}"
+
+    - name: creating developers
+      user:
+        name: "{{ item }}"
+        password: "{{ developer_pass | string | password_hash('sha512') }}"
+        home: /var/www
+      with_items: "{{ developers | list }}"
+
+
+###Inventory file
+node00 ansible_host=172.20.1.100 ansible_user=root ansible_ssh_pass=Passw0rd
+node01 ansible_host=172.20.1.101 ansible_user=root ansible_ssh_pass=Passw0rd
+node02 ansible_host=172.20.1.102 ansible_user=root ansible_ssh_pass=Passw0rd
+
+###Create vault password for admins and developers
+ansible-vault encrypt_string secrets/vault.txt 'd3v3l0p3r' --name developer_pass
+ansible-vault encrypt_string secrets/vault.txt 'adm$n$' --name admin_pass
+
+###View data/users.yml
+admins:
+  - rob
+  - david
+  - joy
+
+developers:
+  - tim
+  - ray

@@ -1,0 +1,8 @@
+For easy to write worked script. We can be used below package:
+
+It's name - shellcheck.
+
+yum install -y shellcheck
+
+But, we can be import extenshion to vim.
+Also, we can use this site to online checks: https://www.shellcheck.net/

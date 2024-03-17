@@ -1,0 +1,65 @@
+
+#Note: Replace <IP_ADDRESS_1>, <IP_ADDRESS_2>, <NETMASK>, <GATEWAY>, and <DNS_SERVER> with your specific network details.
+
+#In this configuration, two bonds (bond0 and bond1) are defined with the BONDING_MASTER=yes option. Each bond is set to use 802.3ad link aggregation (mode=4), with a link monitoring #interval of 100 milliseconds (miimon=100), a fast LACP rate (lacp_rate=fast), and a transmit hash policy that balances traffic based on layer 3 and 4 information ###(xmit_hash_policy=layer3+4). The primary interface for each bond (primary=ensX and primary=ensY) is specified, and the two bonds are assigned different IP addresses (IPADDR).
+
+#Two physical network interfaces (ensX and ensY) are defined as slaves of bond0 and bond1, respectively, and two additional physical network interfaces (ensZ and ensW) are defined as #slaves of bond0 and bond1, respectively.
+
+#By using two bonds with different physical interfaces, the configuration provides a level of tolerance for network failures. If one of the physical interfaces fails, traffic can #still be transmitted and received through the other bond. Additionally, by using 802.3ad link aggregation, the bonds can provide increased network bandwidth and redundancy.
+
+
+# /etc/sysconfig/network-scripts/ifcfg-bond0
+DEVICE=bond0
+NAME=bond0
+BONDING_OPTS="mode=4 miimon=100 xmit_hash_policy=layer3+4 lacp_rate=fast primary=ensX"
+ONBOOT=yes
+BOOTPROTO=none
+IPADDR=<IP_ADDRESS_1>
+NETMASK=<NETMASK>
+GATEWAY=<GATEWAY>
+DNS1=<DNS_SERVER>
+BONDING_MASTER=yes
+
+# /etc/sysconfig/network-scripts/ifcfg-bond1
+DEVICE=bond1
+NAME=bond1
+BONDING_OPTS="mode=4 miimon=100 xmit_hash_policy=layer3+4 lacp_rate=fast primary=ensY"
+ONBOOT=yes
+BOOTPROTO=none
+IPADDR=<IP_ADDRESS_2>
+NETMASK=<NETMASK>
+GATEWAY=<GATEWAY>
+DNS1=<DNS_SERVER>
+BONDING_MASTER=yes
+
+# /etc/sysconfig/network-scripts/ifcfg-ensX
+DEVICE=ensX
+NAME=ensX
+ONBOOT=yes
+BOOTPROTO=none
+SLAVE=yes
+MASTER=bond0
+
+# /etc/sysconfig/network-scripts/ifcfg-ensY
+DEVICE=ensY
+NAME=ensY
+ONBOOT=yes
+BOOTPROTO=none
+SLAVE=yes
+MASTER=bond1
+
+# /etc/sysconfig/network-scripts/ifcfg-ensZ
+DEVICE=ensZ
+NAME=ensZ
+ONBOOT=yes
+BOOTPROTO=none
+SLAVE=yes
+MASTER=bond0
+
+# /etc/sysconfig/network-scripts/ifcfg-ensW
+DEVICE=ensW
+NAME=ensW
+ONBOOT=yes
+BOOTPROTO=none
+SLAVE=yes
+MASTER=bond1

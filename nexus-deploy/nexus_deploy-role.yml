@@ -1,0 +1,46 @@
+- name: Create app directories
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - /app/nginx
+    - /app/nginx/certs
+    - /app/nexus
+  when: not stat("{{ item }}").exists
+
+- name: Configure Nginx
+  template:
+    src: nginx.conf.j2
+    dest: /app/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Check Nginx Configuration
+  command: nginx -t -c /app/nginx/nginx.conf
+  register: nginx_check_result
+
+- name: Start Nginx Docker Container
+  docker_container:
+    name: nexus_nginx
+    image: nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/app/nginx:/etc/nginx:ro"
+      - "/app/nginx/certs:/app/nginx/certs:ro"
+    state: started
+    restart_policy: always
+  when: nginx_check_result.rc == 0
+
+- name: Start Nexus Server Docker Container
+  docker_container:
+    name: nexus_server
+    image: sonatype/nexus3:latest
+    ports:
+      - "8081:8081"
+    volumes:
+      - "/app/nexus:/nexus-data"
+    state: started
+    restart_policy: always
