@@ -1,4 +1,27 @@
-Directory Hierarchy
+Read before you do!
+===
+It will be abstract info, but I don't know that write me here.
+
+## Paper Information
+- Title:  `Useful Script for Everything`
+- Authors:  `Zhakhongir Rakhmankulov (@atlet99)`
+
+
+## Install & Dependence
+- bash-completion
+- ansible
+
+## Use for example
+- for running ansible playbook
+  ```
+  ansible-playbook file.yml
+  ```
+- for shell script
+  ```
+  sh file.sh
+  ```
+
+## Directory Hierarchy
 
         |   add_docker_proxy_via_nexus.sh
         |   add_multiple_users_to_group.sh
