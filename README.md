@@ -4,7 +4,7 @@ It will be abstract info, but I don't know that write me here.
 
 ## Paper Information
 - Title:  `Useful Script for Everything`
-- Authors:  `Zhakhongir Rakhmankulov (@atlet99)`
+- Authors:  `Miras Duisenov`
 
 
 ## Install & Dependence
