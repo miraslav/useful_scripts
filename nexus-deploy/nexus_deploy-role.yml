@@ -6,7 +6,6 @@
     - /app/nginx
     - /app/nginx/certs
     - /app/nexus
-  when: not stat("{{ item }}").exists
 
 - name: Configure Nginx
   template:

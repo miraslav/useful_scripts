@@ -1,43 +1,41 @@
 #!/bin/bash
+# Create an LVM volume on an empty disk, format it, and mount it by UUID.
+set -euo pipefail
 
-# Prompt user for physical disk name
-echo "Enter the name of the physical disk to add (e.g. /dev/sdb):"
-read disk
+read -r -p "Physical disk (example /dev/sdb): " disk
+read -r -p "Volume group name: " vg_name
+read -r -p "Logical volume name: " lv_name
+read -r -p "Mount directory (example /mnt/data): " mount_dir
+read -r -p "Filesystem (xfs or ext4): " fs_type
 
-# Prompt user for volume group name
-echo "Enter the name of the volume group:"
-read vg_name
+case "$fs_type" in
+  xfs|ext4) ;;
+  *) echo "Filesystem must be xfs or ext4."; exit 1 ;;
+esac
 
-# Prompt user for logical group name
-echo "Enter the name of the logical group:"
-read lv_name
-
-# Prompt user for directory to mount the logical volume on
-echo "Enter the directory to mount the logical volume on (e.g. /mnt/data):"
-read mount_dir
-
-# Check if the mount directory exists, and create it if it doesn't
-if [ ! -d $mount_dir ]; then
-  mkdir $mount_dir
+if [[ ! -b "$disk" ]]; then
+  echo "Not a block device: $disk"
+  exit 1
 fi
 
-# Create physical volume on the disk
-pvcreate $disk
+if lsblk -n -o MOUNTPOINT "$disk" | grep -q '[^[:space:]]'; then
+  echo "Refusing $disk because it has a mounted filesystem."
+  exit 1
+fi
 
-# Create volume group from physical volume
-vgcreate $vg_name $disk
+echo "This creates PV/VG/LV on $disk and formats it as $fs_type."
+read -r -p "Type yes to destroy existing data on $disk: " answer
+[[ "$answer" == "yes" ]] || exit 1
 
-# Create logical volume from volume group
-lvcreate -n $lv_name -l 100%VG $vg_name
+mkdir -p "$mount_dir"
+pvcreate "$disk"
+vgcreate "$vg_name" "$disk"
+lvcreate -n "$lv_name" -l 100%VG "$vg_name"
 
-# Create XFS file system on logical volume
-mkfs.xfs /dev/$vg_name/$lv_name
+device="/dev/${vg_name}/${lv_name}"
+mkfs."$fs_type" "$device"
+mount "$device" "$mount_dir"
 
-# Mount the logical volume at the specified directory
-mount /dev/$vg_name/$lv_name $mount_dir
-
-# Add an entry to /etc/fstab to mount the logical volume at boot
-echo "/dev/$vg_name/$lv_name $mount_dir xfs defaults 0 0" >> /etc/fstab
-
-# Confirm that the disk has been successfully added, VG and LV created, and specified directory mounted
-echo "Physical disk $disk has been added to volume group $vg_name and logical group $lv_name, with $mount_dir specified as the mount point."
+uuid=$(blkid -s UUID -o value "$device")
+echo "UUID=${uuid} ${mount_dir} ${fs_type} defaults 0 2" >> /etc/fstab
+echo "Mounted $device on $mount_dir (UUID=${uuid})."

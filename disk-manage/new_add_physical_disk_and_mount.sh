@@ -1,66 +1,53 @@
 #!/bin/bash
+# Show unused disks, then create an LVM volume, format it, and mount it by UUID.
+set -euo pipefail
 
-# Get a list of all disk partitions
-partitions=$(lsblk | awk '$6 == "disk" {print $1}')
-
-# Prompt the user to display the available partitions
-read -p "Do you want to display the available partitions? (yes/no): " display_partitions
-
-# If the user wants to display the available partitions
+read -r -p "Show unused disks first? (yes/no): " display_partitions
 if [[ "$display_partitions" == "yes" ]]; then
-  echo "Empty/Unused partitions:"
-  # Loop through each partition
-  for partition in $partitions; do
-    # Check if the partition is formatted
-    format=$(lsblk -o FSTYPE /dev/$partition | awk 'NR > 1 {print $1}')
-
-    # Check if the partition is mounted
-    mount=$(lsblk -o MOUNTPOINT /dev/$partition | awk 'NR > 1 {print $1}')
-
-    # If the partition is unformatted and unused, output its name and size
-    if [ -z "$format" ] && [ -z "$mount" ]; then
-      size=$(lsblk -o SIZE /dev/$partition | awk 'NR > 1 {print $1}')
-      echo "/dev/$partition: $size"
-    fi
-  done
+  "$(dirname "$0")/get_empty_disk.sh"
 fi
 
-# Prompt the user to specify disk,  the directory path, volume group name, logical group name, and file system type
-read -p "Enter the name of the physical disk to add (e.g. sdb): " choice_disk
-read -p "Enter the mount directory path: " mount_dir
-read -p "Enter the volume group name: " vg_name
-read -p "Enter the logical group name: " lg_name
-read -p "Enter the file system name (e.g. xfs): " fs_type
+read -r -p "Physical disk name without /dev (example sdb): " choice_disk
+read -r -p "Mount directory: " mount_dir
+read -r -p "Volume group name: " vg_name
+read -r -p "Logical volume name: " lv_name
+read -r -p "Filesystem (xfs or ext4): " fs_type
 
-# Check if the specified mount directory exists, and create it if it doesn't
-if [[ ! -d "$mount_dir" ]]; then
-  mkdir -p "$mount_dir"
+disk="/dev/${choice_disk}"
+
+case "$fs_type" in
+  xfs|ext4) ;;
+  *) echo "Filesystem must be xfs or ext4."; exit 1 ;;
+esac
+
+if [[ ! -b "$disk" ]]; then
+  echo "Not a block device: $disk"
+  exit 1
 fi
 
-# Add the new disk to the system
-echo "Adding new disk to the system..."
-pvcreate /dev/$choice_disk
-vgcreate $vg_name /dev/$choice_disk
-lvcreate -n $lg_name -l 100%VG $vg_name
+if lsblk -n -o MOUNTPOINT "$disk" | grep -q '[^[:space:]]'; then
+  echo "Refusing $disk because it has a mounted filesystem."
+  exit 1
+fi
 
-# Format the logical volume with the specific file system
-echo "Formatting logical volume with specific file system..."
-mkfs.$fs_type /dev/mapper/$vg_name-$lg_name
+echo "This creates PV/VG/LV on $disk and formats it as $fs_type."
+read -r -p "Type yes to destroy existing data on $disk: " answer
+[[ "$answer" == "yes" ]] || exit 1
 
-# Mount the logical volume to the specified directory
-echo "Mounting logical volume to $mount_dir..."
-mount /dev/mapper/$vg_name-$lg_name $mount_dir
+mkdir -p "$mount_dir"
+pvcreate "$disk"
+vgcreate "$vg_name" "$disk"
+lvcreate -n "$lv_name" -l 100%VG "$vg_name"
 
-# Check if the logical volume was successfully mounted
-if [[ ! -z $(mount | grep "$mount_dir") ]]; then
-  echo "Disk successfully added and mounted at $mount_dir"
+device="/dev/${vg_name}/${lv_name}"
+mkfs."$fs_type" "$device"
 
-# Add an entry to /etc/fstab to mount the logical volume at boot
-echo "/dev/$vg_name/$lg_name $mount_dir $fs_type defaults 0 0" >> /etc/fstab
-
-# Display the available space on the mounted logical volume
-echo "Available space on logical volume:"
- df -h $mount_dir
+if mount "$device" "$mount_dir"; then
+  uuid=$(blkid -s UUID -o value "$device")
+  echo "UUID=${uuid} ${mount_dir} ${fs_type} defaults 0 2" >> /etc/fstab
+  echo "Mounted $device on $mount_dir"
+  df -h "$mount_dir"
 else
-  echo "Failed to mount disk at $mount_dir"
+  echo "Failed to mount $device on $mount_dir"
+  exit 1
 fi

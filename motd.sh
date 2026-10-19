@@ -1,27 +1,18 @@
 #!/bin/bash
+set -euo pipefail
 
-#Attention! It doesn't work for older (depreciate) OS version like a 5,6 (RHEL-based)
-
-# Get the hostname
 hostname=$(hostname)
-
-# Get the IP address
-ip_address=$(ip addr | grep 'UP' -A2 | tail -n1 | awk '{print $2}' | cut -f1  -d'/')
-
-# Get the uptime in a human-readable format
+ip_address=$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{ for (i = 1; i <= NF; i++) if ($i == "src") { print $(i + 1); exit } }')
 uptime=$(uptime --pretty)
+os_info=$(awk -F= '/^PRETTY_NAME=/{ gsub(/"/, "", $2); print $2; exit }' /etc/os-release)
 
-# Get the operating system information
-os_info=$(grep PRETTY_NAME /etc/*release | awk -F'=' '{print $2}' | tr -d '"')
-
-# Define the message to display
 message="
 Welcome to the Linux Server!
 
-Hostname: $hostname
-    IP Address: $ip_address
-        Uptime: $uptime
-            Operating System: $os_info
+Hostname: ${hostname}
+IP Address: ${ip_address:-unknown}
+Uptime: ${uptime}
+Operating System: ${os_info}
 
 Here are some important tips:
 - Please be respectful and considerate of other users.
@@ -31,13 +22,8 @@ Here are some important tips:
 Enjoy your work and have a great day!
 "
 
-# Backup the current MOTD
-cp /etc/motd /root/motd.bak
-
-# Add the message to the MOTD
-echo "$message" > /etc/motd
-
-
-
-
-# In this version of the script, the current MOTD is backed up using the cp /etc/motd /etc/motd.bak command. The rest of the script remains the same as in the previous version.
+if [[ -f /etc/motd ]]; then
+  cp /etc/motd /root/motd.bak
+fi
+printf '%s\n' "$message" > /etc/motd
+echo "MOTD updated. Previous file, if any, is /root/motd.bak"

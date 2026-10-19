@@ -1,18 +1,20 @@
 #!/bin/bash
+# Read hosts from server_list.txt and record which ones answer ping.
+set -euo pipefail
 
+input_file="${1:-server_list.txt}"
 output_file="output_$(date +"%Y%m%d_%H%M%S").txt"
 
-while IFS= read -r server
-do
-    ping_result=$(ping -c 1 "$server" 2>/dev/null)
+if [[ ! -f "$input_file" ]]; then
+  echo "Host list not found: $input_file"
+  exit 1
+fi
 
-    ttl=$(echo "$ping_result" | grep -oP "(?<=ttl=)\d+")
-
-    if [[ $ttl -ge 57 && $ttl -lt 100 ]]; then
-        echo "Linux: $server is reachable (TTL: $ttl)" >> "$output_file"
-    elif [[ $ttl -ge 115 ]]; then
-        echo "Windows: $server is reachable (TTL: $ttl)" >> "$output_file"
-    else
-        echo "Unknown: $server is unreachable or TTL value not in range (TTL: $ttl)" >> "$output_file"
-    fi
-done < server_list.txt
+while IFS= read -r server || [[ -n "$server" ]]; do
+  [[ -z "$server" || "$server" =~ ^# ]] && continue
+  if ping -c 1 -W 2 "$server" >/dev/null 2>&1; then
+    echo "reachable: $server" | tee -a "$output_file"
+  else
+    echo "unreachable: $server" | tee -a "$output_file"
+  fi
+done < "$input_file"

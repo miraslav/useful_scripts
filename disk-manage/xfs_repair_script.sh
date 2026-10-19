@@ -1,33 +1,30 @@
 #!/bin/bash
+# Repair one unmounted XFS filesystem.
+# --zero-log passes -L and can drop the last uncommitted metadata.
+set -euo pipefail
 
-current_date=$(date +"%Y%m%d_%H%M%S")
-log_file="/root/repair_log_$current_date.txt"
-partition_to_repair="/dev/mapper/VG_DB-lv_db"
-xfs_repair_command="/sbin/xfs_repair"
+device="${1:-/dev/mapper/VG_DB-lv_db}"
+log_file="/root/repair_log_$(date +"%Y%m%d_%H%M%S").txt"
+repair_args=()
 
-# Функция для выполнения xfs_repair
-run_xfs_repair() {
-    partition=$1
-    $xfs_repair_command -L "$partition" >> "$log_file" 2>&1
-    return $?
-}
-
-# Запуск xfs_repair только для указанного раздела
-run_xfs_repair "$partition_to_repair"
-exit_code=$?
-
-if [ $exit_code -eq 0 ]; then
-    echo "Success: $partition_to_repair" >> "$log_file"
-else
-    echo "Error: $partition_to_repair" >> "$log_file"
+if [[ "${2:-}" == "--zero-log" ]]; then
+  repair_args+=(-L)
+  echo "Zeroing the XFS log. Recent metadata may be lost." | tee -a "$log_file"
 fi
 
-if grep -q "Error" "$log_file"; then
-    echo "Errors found. Check $log_file for details."
-    exit 1
-else
-    echo "Repair process completed successfully. Check $log_file for details."
-    exit 0
+if [[ ! -b "$device" ]]; then
+  echo "Not a block device: $device"
+  exit 1
 fi
 
+if findmnt "$device" >/dev/null 2>&1; then
+  echo "Unmount $device before xfs_repair."
+  exit 1
+fi
 
+if /sbin/xfs_repair "${repair_args[@]}" "$device" >>"$log_file" 2>&1; then
+  echo "Success: $device" | tee -a "$log_file"
+else
+  echo "Error: $device. See $log_file"
+  exit 1
+fi

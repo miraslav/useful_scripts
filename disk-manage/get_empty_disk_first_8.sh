@@ -1,2 +1,3 @@
 #!/bin/bash
-lsblk -o NAME,HCTL,SIZE,MOUNTPOINT | egrep -o sd. | uniq -u | head -8
+set -euo pipefail
+"$(dirname "$0")/get_empty_disk.sh" | head -n 8
