@@ -20,7 +20,7 @@ USER = os.getenv("HARBOR_USER", "")
 PASS = os.getenv("HARBOR_PASS")
 
 HARBOR_REGISTRY = os.getenv("HARBOR_REGISTRY") or urlparse(HARBOR).netloc
-PROJECTS = [p.strip() for p in os.getenv("HARBOR_PROJECTS", "hm_projects").split(",") if p.strip()]
+PROJECTS = [p.strip() for p in os.getenv("HARBOR_PROJECTS", "library").split(",") if p.strip()]
 KMETRICS_FILE = os.getenv("KMETRICS_FILE", "kmetrics.json")
 
 DAYS = int(os.getenv("DAYS", os.getenv("MIN_AGE_DAYS", "3")))
@@ -220,7 +220,7 @@ def artifact_used(project, repo, digest, tags, used_tags, used_digests):
     if any(f"{repo_ref}:{tag.lower()}" in used_tags for tag in tags):
         return True
 
-    # Prod often runs the same tag from hm_projects while the copy lives in dwh-images.
+    # The same repo:tag may run from another Harbor project. Keep both copies.
     suffix = f"/{repo.lower()}:"
     for tag in tags:
         needle = suffix + tag.lower()

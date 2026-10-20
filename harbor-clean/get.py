@@ -9,12 +9,14 @@ import utils
 kubeconfig_path_preprod = os.getenv("KUBECONFIG_PREPROD", "kubeconfig-preprod.yml")
 kubeconfig_path_prod = os.getenv("KUBECONFIG_PROD", "kubeconfig-prod.yml")
 kubeconfig_path_qa = os.getenv("KUBECONFIG_QA", "kubeconfig-qa.yml")
-harbor_host = os.getenv("HARBOR_REGISTRY", "harbor.halykmarket.com")
+harbor_host = os.getenv("HARBOR_REGISTRY") or os.getenv("HARBOR_URL", "harbor.example.com")
+if "://" in harbor_host:
+    harbor_host = harbor_host.split("://", 1)[1].rstrip("/").split("/", 1)[0]
 kmetrics_file = os.getenv("KMETRICS_FILE", "kmetrics.json")
-qa_prefix = os.getenv("QA_NS_PREFIX", "hb-market-qa")
+qa_prefix = os.getenv("QA_NS_PREFIX", "app-qa")
 qa_count = int(os.getenv("QA_NS_COUNT", "10"))
-ns_preprod = os.getenv("NS_PREPROD", "hb-market-preprod")
-ns_prod = os.getenv("NS_PROD", "hb-market-prod")
+ns_preprod = os.getenv("NS_PREPROD", "app-preprod")
+ns_prod = os.getenv("NS_PROD", "app-prod")
 
 
 def as_list(value):

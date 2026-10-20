@@ -5,6 +5,6 @@ Wants=network-online.target
 
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/kmetrics
-EnvironmentFile=/opt/kmetrics/.env
-ExecStart=/bin/bash -lc 'python3 /opt/kmetrics/get.py && python3 /opt/kmetrics/clean.py'
+WorkingDirectory=/opt/harbor-clean
+EnvironmentFile=/opt/harbor-clean/.env
+ExecStart=/bin/bash -lc 'python3 /opt/harbor-clean/get.py && python3 /opt/harbor-clean/clean.py'
