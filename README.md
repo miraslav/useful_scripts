@@ -11,6 +11,7 @@ Personal sysadmin notes and scripts. Read a script before running it. Disk scrip
 - `jenkins/setup/ubuntu.sh` — Jenkins LTS with OpenJDK 21
 - `network-scripts/` — DNS lookups from a text file
 - `gitlab_runner_cleaner.sh` — prune Docker data on a GitLab Runner host
+- `harbor-clean/` — delete unused Harbor images using live Kubernetes refs
 - `ansible-mock-exam/` — exam answer playbooks, not production roles
 
 ## Examples

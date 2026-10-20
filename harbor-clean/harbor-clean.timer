@@ -1,0 +1,10 @@
+[Unit]
+Description=Run Harbor cleaner daily
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+Unit=harbor-clean.service
+
+[Install]
+WantedBy=timers.target

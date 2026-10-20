@@ -1,0 +1,10 @@
+[Unit]
+Description=Harbor cleaner by kmetrics.json
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/kmetrics
+EnvironmentFile=/opt/kmetrics/.env
+ExecStart=/bin/bash -lc 'python3 /opt/kmetrics/get.py && python3 /opt/kmetrics/clean.py'

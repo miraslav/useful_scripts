@@ -1,0 +1,6 @@
+.env
+kubeconfig*.yml
+kmetrics.json
+*.log
+__pycache__/
+venv/
